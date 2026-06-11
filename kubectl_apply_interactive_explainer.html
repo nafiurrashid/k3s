@@ -1,0 +1,273 @@
+
+<style>
+  h2.sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0 }
+  .k8s-wrap { padding: 1rem 0; font-family: var(--font-sans); }
+  .progress-bar { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1.5rem; }
+  .step-dot { width:28px;height:28px;border-radius:50%;border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;cursor:pointer;transition:all .2s;color:var(--color-text-secondary);background:var(--color-background-secondary); }
+  .step-dot.active { background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info); }
+  .step-dot.done { background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success); }
+  .step-dot:hover { border-color:var(--color-border-primary); }
+  .card { background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem 1.5rem;margin-bottom:1rem; }
+  .step-title { font-size:17px;font-weight:500;color:var(--color-text-primary);margin:0 0 4px; }
+  .step-subtitle { font-size:13px;color:var(--color-text-secondary);margin:0 0 1rem; }
+  .step-desc { font-size:14px;color:var(--color-text-primary);line-height:1.7;margin:0 0 1rem; }
+  .code-block { background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:.75rem 1rem;font-family:var(--font-mono);font-size:12px;color:var(--color-text-primary);margin:0 0 1rem;white-space:pre;overflow-x:auto; }
+  .insight-box { background:var(--color-background-info);border:0.5px solid var(--color-border-info);border-radius:var(--border-radius-md);padding:.75rem 1rem;font-size:13px;color:var(--color-text-info);margin:0 0 1rem; }
+  .tags { display:flex;gap:6px;flex-wrap:wrap;margin-bottom:.75rem; }
+  .tag { font-size:11px;font-weight:500;padding:3px 10px;border-radius:99px;border:0.5px solid; }
+  .tag-purple { background:var(--color-background-base,#EEEDFE);color:#3C3489;border-color:#AFA9EC; }
+  .tag-teal   { background:#E1F5EE;color:#085041;border-color:#5DCAA5; }
+  .tag-amber  { background:#FAEEDA;color:#633806;border-color:#EF9F27; }
+  .tag-coral  { background:#FAECE7;color:#711B13;border-color:#F0997B; }
+  .tag-gray   { background:var(--color-background-secondary);color:var(--color-text-secondary);border-color:var(--color-border-secondary); }
+  .nav-row { display:flex;gap:10px;align-items:center; }
+  .nav-row button { flex:1;padding:.55rem 1rem;font-size:13px;cursor:pointer;border-radius:var(--border-radius-md);font-family:var(--font-sans); }
+  .btn-secondary { background:transparent;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary); }
+  .btn-secondary:hover { background:var(--color-background-secondary); }
+  .btn-primary { background:var(--color-background-info);border:0.5px solid var(--color-border-info);color:var(--color-text-info);font-weight:500; }
+  .btn-primary:hover { opacity:.85; }
+  .btn-ask { background:transparent;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);font-size:12px;padding:.4rem .75rem;cursor:pointer;border-radius:var(--border-radius-md);font-family:var(--font-sans); }
+  .btn-ask:hover { background:var(--color-background-secondary); }
+  .count-badge { font-size:11px;font-weight:500;color:var(--color-text-secondary);background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:99px;padding:2px 8px; }
+  .visual-row { display:flex;align-items:center;gap:8px;margin-bottom:.75rem;font-size:13px;flex-wrap:wrap; }
+  .node-label { padding:4px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);font-size:12px;font-weight:500;white-space:nowrap; }
+  .arrow { color:var(--color-text-tertiary); }
+  .highlight { background:var(--color-background-info);border-color:var(--color-border-info);color:var(--color-text-info); }
+</style>
+<div class="k8s-wrap">
+<h2 class="sr-only">Interactive walkthrough of what happens when you run kubectl apply</h2>
+
+<div id="progress-bar" class="progress-bar"></div>
+
+<div class="card" id="step-card">
+  <div class="tags" id="step-tags"></div>
+  <p class="step-title" id="step-title"></p>
+  <p class="step-subtitle" id="step-subtitle"></p>
+  <div class="visual-row" id="step-visual"></div>
+  <p class="step-desc" id="step-desc"></p>
+  <div id="step-code-wrap"></div>
+  <div id="step-insight-wrap"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem" id="ask-btns"></div>
+  <div class="nav-row">
+    <button class="btn-secondary" id="prev-btn" onclick="navigate(-1)">← Back</button>
+    <span class="count-badge" id="count-badge"></span>
+    <button class="btn-primary" id="next-btn" onclick="navigate(1)">Next →</button>
+  </div>
+</div>
+</div>
+
+<script>
+const steps = [
+  {
+    tags: [["kubectl", "purple"], ["API Server", "teal"]],
+    title: "Step 1 — kubectl sends request to API Server",
+    subtitle: "Your laptop talks to Kubernetes' front door",
+    visual: [["Your laptop", ""], ["→", ""], ["kubectl", ""], ["HTTPS :6443", ""], ["API Server", "highlight"]],
+    desc: "When you run `kubectl apply`, kubectl doesn't talk to pods, nodes, or containers directly. It sends a single HTTPS request to the API Server on port 6443. Everything in Kubernetes goes through the API Server — it's the only entry point.",
+    code: "kubectl apply -f deployment.yaml\n# kubectl → API Server (port 6443) only\n# NOT: kubectl → kubelet\n# NOT: kubectl → pod",
+    insight: "💡 Mental model: the API Server is the bouncer. Nothing gets into the cluster without going through it.",
+    ask: ["What does the API Server do?", "Is the API Server running on every node?"]
+  },
+  {
+    tags: [["API Server", "teal"], ["Validation", "amber"]],
+    title: "Step 2 — API Server validates your YAML",
+    subtitle: "Typos get rejected here, before anything happens",
+    visual: [["API Server", "highlight"], ["→", ""], ["Validate schema", ""], ["→", ""], ["Accept / Reject", ""]],
+    desc: "The API Server checks your YAML against the Kubernetes schema. It verifies the API version, resource kind, and all field names. A single typo like `replica` instead of `replicas` gets rejected immediately — nothing is written to the cluster yet.",
+    code: "# Bad — rejected at validation:\nspec:\n  replica: 2   # wrong key\n\n# Good — accepted:\nspec:\n  replicas: 2",
+    insight: "💡 Validation happens before any state is written. This is why kubectl apply can fail fast without leaving partial objects behind.",
+    ask: ["What other validations does Kubernetes do?", "What are admission controllers?"]
+  },
+  {
+    tags: [["etcd", "purple"], ["Storage", "gray"]],
+    title: "Step 3 — Desired state stored in etcd",
+    subtitle: "etcd is the cluster's source of truth",
+    visual: [["API Server", "highlight"], ["→ write", ""], ["etcd", "highlight"], ["(cluster database)", ""]],
+    desc: "After validation, the Deployment object is written to etcd — a distributed key-value store. etcd is the single source of truth for the entire cluster. When you run `kubectl get`, you're reading from etcd, not from running containers.",
+    code: "# This reads from etcd, not from containers:\nkubectl get deployment podinfo -o yaml\n\n# etcd stores:\n# - Deployments, ReplicaSets, Pods\n# - Services, ConfigMaps, Secrets\n# - Everything about desired state",
+    insight: "💡 At this point, only a record has been written. No container has started. Kubernetes stores *intent*, not reality.",
+    ask: ["What happens if etcd goes down?", "Can I query etcd directly?"]
+  },
+  {
+    tags: [["Deployment Controller", "teal"], ["ReplicaSet", "purple"]],
+    title: "Step 4 — Deployment Controller notices the gap",
+    subtitle: "Controllers continuously watch for desired ≠ actual",
+    visual: [["Desired: 2 pods", ""], ["vs", "arrow"], ["Actual: 0 pods", ""], ["→ create", ""], ["ReplicaSet", "highlight"]],
+    desc: "The Deployment Controller runs in a continuous loop, comparing desired state (stored in etcd) to actual state. It sees you want 2 replicas but none exist. Its response: create a ReplicaSet object. The controller doesn't start containers — it just creates more Kubernetes records.",
+    code: "# Controller reconciliation loop:\n# desired_replicas = 2\n# actual_replicas = 0\n# diff = 2 → create ReplicaSet",
+    insight: "💡 This is the core Kubernetes loop: Watch → Compare → Act. Every controller in the system works this way.",
+    ask: ["What's the difference between a Deployment and a ReplicaSet?", "How does Kubernetes know the actual state?"]
+  },
+  {
+    tags: [["ReplicaSet Controller", "teal"], ["Pod", "purple"]],
+    title: "Step 5 — ReplicaSet Controller creates Pod records",
+    subtitle: "More records written to etcd — still no containers",
+    visual: [["ReplicaSet", ""], ["wants 2 pods", ""], ["→ create", ""], ["Pod 1", "highlight"], ["Pod 2", "highlight"]],
+    desc: "The ReplicaSet Controller sees it needs 2 pods but has 0. It creates 2 Pod objects in etcd. These pods have no `nodeName` yet — they exist only as records in the database. No container has been pulled or started.",
+    code: "# etcd now contains:\n# - Deployment: podinfo\n# - ReplicaSet: podinfo-xxxxx\n# - Pod: podinfo-xxxxx-aaaaa (nodeName: null)\n# - Pod: podinfo-xxxxx-bbbbb (nodeName: null)",
+    insight: "💡 A Pod record existing in etcd is not the same as a container running. The pod is 'pending' until a node is assigned.",
+    ask: ["What are all the Pod phases?", "Can a Pod exist without being scheduled?"]
+  },
+  {
+    tags: [["Scheduler", "amber"], ["Node assignment", "teal"]],
+    title: "Step 6 — Scheduler assigns pods to nodes",
+    subtitle: "Picks the best node based on CPU, memory, and constraints",
+    visual: [["Pods (nodeName: null)", ""], ["→", ""], ["Scheduler", "highlight"], ["→", ""], ["nodeName: node-1", ""]],
+    desc: "The Scheduler watches for pods with no `nodeName`. For each unscheduled pod, it evaluates all available nodes based on resource requests, taints, tolerations, and affinity rules. It picks the best fit and writes the `nodeName` field back to etcd.",
+    code: "# Before scheduling:\nspec:\n  nodeName: null\n\n# After scheduling:\nspec:\n  nodeName: ip-172-31-x-x\n\n# Scheduler checks:\n# - Available CPU / memory\n# - Taints and tolerations\n# - Node/pod affinity",
+    insight: "💡 The Scheduler only *assigns* — it doesn't start anything. It just updates a field in etcd and moves on.",
+    ask: ["How does the scheduler handle resource limits?", "What are taints and tolerations?"]
+  },
+  {
+    tags: [["Kubelet", "coral"], ["Node agent", "gray"]],
+    title: "Step 7 — Kubelet sees the assigned pod",
+    subtitle: "The node's agent finally takes action",
+    visual: [["Pod assigned to node", ""], ["→", ""], ["Kubelet", "highlight"], ["watches etcd", ""], ["→ start container", ""]],
+    desc: "Kubelet runs on every node as a daemon. It watches the API Server for pods assigned to its node. When it sees a pod with its own `nodeName` and no running container, it tells the container runtime (containerd) to start it.",
+    code: "# Kubelet is embedded in K3s:\nsystemctl status k3s\n\n# Kubelet watches for pods where:\n# - nodeName == this node\n# - container not yet running",
+    insight: "💡 Kubelet is the bridge between the Kubernetes control plane and actual Linux processes on the machine.",
+    ask: ["What happens if the kubelet crashes?", "How does kubelet report pod status?"]
+  },
+  {
+    tags: [["containerd", "purple"], ["Image pull", "gray"]],
+    title: "Step 8 — containerd pulls the image",
+    subtitle: "Like `docker pull`, but directly via the container runtime",
+    visual: [["Kubelet", ""], ["→", ""], ["containerd", "highlight"], ["→ check cache", ""], ["→ pull if needed", ""]],
+    desc: "Kubelet tells containerd to run the container. containerd first checks if the image is cached locally. If not, it pulls from the container registry. Kubernetes uses containerd directly — Docker is not involved in modern clusters.",
+    code: "# Equivalent to:\ndocker pull nginx:alpine\n\n# But Kubernetes uses containerd directly:\n# crictl images  ← lists local images\n# crictl ps       ← lists running containers",
+    insight: "💡 Docker as a runtime was removed in Kubernetes 1.24. containerd handles everything now.",
+    ask: ["What is the difference between containerd and Docker?", "How do I pull from a private registry?"]
+  },
+  {
+    tags: [["Linux", "amber"], ["namespaces", "teal"]],
+    title: "Step 9 — Linux creates namespaces",
+    subtitle: "Isolation via PID, network, mount, and UTS namespaces",
+    visual: [["containerd", ""], ["→", ""], ["Linux kernel", "highlight"], ["→ PID ns", ""], ["Net ns", ""], ["Mount ns", ""]],
+    desc: "When the container starts, the Linux kernel creates isolated namespaces for it. The container gets its own PID space, network interface, mount points, and hostname. It *thinks* it's a separate machine — but it shares the host kernel.",
+    code: "# Namespaces created per container:\n# PID namespace    - isolated process IDs\n# Network namespace - isolated network stack\n# Mount namespace  - isolated filesystem\n# UTS namespace    - isolated hostname\n\n# Inspect with:\nnsenter -t <pid> --net -- ip addr",
+    insight: "💡 Containers aren't VMs. They're just processes with extra kernel-level isolation. The host kernel runs everything.",
+    ask: ["What is nsenter used for?", "How are namespaces different from VMs?"]
+  },
+  {
+    tags: [["cgroups", "amber"], ["Resource limits", "coral"]],
+    title: "Step 10 — Linux enforces cgroups",
+    subtitle: "CPU and memory limits live in the kernel, not Kubernetes",
+    visual: [["resources.limits", ""], ["→", ""], ["Kubernetes API", ""], ["→ asks", ""], ["Linux cgroups", "highlight"]],
+    desc: "If your Deployment specifies resource limits, Kubernetes translates them into Linux cgroup rules. The kernel enforces them — not Kubernetes. Kubernetes is just the configuration layer. If a container exceeds its memory limit, the OOM killer terminates it.",
+    code: "resources:\n  limits:\n    cpu: 200m\n    memory: 128Mi\n\n# Kubernetes tells Linux:\n# CPU quota: max 0.2 core\n# Memory: OOM kill at 128MB\n\n# Check cgroups:\ncat /sys/fs/cgroup/memory/.../memory.limit_in_bytes",
+    insight: "💡 Kubernetes says what it wants. Linux enforces it. This is why resource limits are non-negotiable at the kernel level.",
+    ask: ["What happens when a container exceeds memory limits?", "What is the OOM killer?"]
+  },
+  {
+    tags: [["Container running", "teal"], ["PID 1", "purple"]],
+    title: "Step 11 — Container process starts",
+    subtitle: "Your app is now PID 1 inside its namespace",
+    visual: [["containerd", ""], ["→", ""], ["fork/exec", ""], ["→", ""], ["nginx (PID 1)", "highlight"]],
+    desc: "The container's main process starts as PID 1 inside its PID namespace. From the container's perspective, it's the first and only process. From the host's perspective, it's just another process with an isolated namespace.",
+    code: "# Check from inside the container:\nkubectl exec -it nginx-pod -- ps aux\n# PID  1  nginx: master process\n# PID  8  nginx: worker process\n\n# Check from the host:\nps aux | grep nginx\n# Shows the real host PID (e.g. 4821)",
+    insight: "💡 PID 1 is significant — it's the init process. If it dies, the container dies. Use an init system (tini) for complex apps.",
+    ask: ["Why is PID 1 special?", "What is a zombie process in containers?"]
+  },
+  {
+    tags: [["Readiness probe", "amber"], ["Traffic", "teal"]],
+    title: "Step 12 — Readiness probe decides pod is ready",
+    subtitle: "Kubelet checks health before sending traffic",
+    visual: [["Kubelet", ""], ["→ HTTP GET /", ""], ["Pod", "highlight"], ["200 OK →", ""], ["Ready = true", ""]],
+    desc: "Kubelet periodically runs the readiness probe — by default, an HTTP check against the pod's IP. Only when it succeeds does the pod's `Ready` field become true. This prevents traffic from reaching containers that haven't fully started yet.",
+    code: "readinessProbe:\n  httpGet:\n    path: /\n    port: 80\n  initialDelaySeconds: 5\n  periodSeconds: 10\n\n# Result:\nkubectl get pods\n# NAME          READY   STATUS\n# podinfo-xxx   1/1     Running\n# ↑ '1/1' = 1 ready of 1 total",
+    insight: "💡 'Running' and 'Ready' are different. A pod can be Running but not Ready — it won't receive traffic until the probe passes.",
+    ask: ["What's the difference between readiness and liveness probes?", "How long should initialDelaySeconds be?"]
+  },
+  {
+    tags: [["Service", "teal"], ["Endpoints", "purple"]],
+    title: "Step 13 — Endpoint Controller updates the Service",
+    subtitle: "Ready pods are added to the load-balancing pool",
+    visual: [["Pod A ready", ""], ["Pod B ready", ""], ["→", ""], ["Endpoint Controller", "highlight"], ["→", ""], ["Service endpoints", ""]],
+    desc: "The Endpoint Controller watches for pods matching a Service's selector. When pods become Ready, their IPs are added to the Service's Endpoints list. This is how the Service knows which pods are eligible to receive traffic.",
+    code: "# Service selector:\nselector:\n  app: podinfo\n\n# Check endpoints:\nkubectl get endpoints podinfo\n# ENDPOINTS\n# 10.42.0.10:80,10.42.0.11:80",
+    insight: "💡 A Service doesn't route to pods directly — it routes to endpoints. Unhealthy pods are removed from endpoints automatically.",
+    ask: ["How do Services discover pods?", "What happens to endpoints when a pod restarts?"]
+  },
+  {
+    tags: [["kube-proxy", "coral"], ["iptables", "amber"]],
+    title: "Step 14 — kube-proxy programs iptables rules",
+    subtitle: "The Service IP is virtual — iptables does the real routing",
+    visual: [["Service IP 10.43.x.x", ""], ["→ iptables rule", "highlight"], ["→", ""], ["Pod A or Pod B", ""]],
+    desc: "A Service's ClusterIP (e.g. 10.43.10.25) is not a real process or interface. kube-proxy programs iptables rules on every node that intercept traffic to the Service IP and randomly forward it to one of the healthy pod IPs. This is how load balancing works.",
+    code: "# Service IP (virtual, no process behind it):\nkubectl get svc podinfo\n# CLUSTER-IP: 10.43.10.25\n\n# kube-proxy creates iptables rules:\nsudo iptables -t nat -L KUBE-SERVICES\n# 10.43.10.25 → 10.42.0.10 or 10.42.0.11",
+    insight: "💡 In newer clusters, eBPF (e.g. Cilium) replaces iptables for faster, more scalable routing.",
+    ask: ["How is eBPF different from iptables?", "What is kube-proxy doing exactly?"]
+  },
+  {
+    tags: [["Self-healing", "teal"], ["Full flow", "purple"]],
+    title: "Step 15 — Traffic flows, self-healing begins",
+    subtitle: "The complete loop: delete a pod and watch it come back",
+    visual: [["Client", ""], ["→ Service", ""], ["→ iptables", ""], ["→ Pod A or Pod B", "highlight"]],
+    desc: "Traffic now flows from client → Service IP → iptables rules → a healthy pod. If you delete a pod, the ReplicaSet Controller notices the deficit, creates a replacement, the Scheduler assigns it, Kubelet starts it, the readiness probe passes, and endpoints are updated — all automatically.",
+    code: "# Delete a pod:\nkubectl delete pod podinfo-xxxxx\n\n# Self-healing chain:\n# ReplicaSet: desired=2, actual=1 → create pod\n# Scheduler: assigns node\n# Kubelet: starts container\n# Readiness: probe passes\n# Endpoints: pod IP added back\n# Traffic: continues uninterrupted",
+    insight: "💡 Kubernetes doesn't manage containers. It manages *desired state records in etcd*. Controllers do the rest.",
+    ask: ["What is a Kubernetes operator?", "How does HPA (autoscaling) fit into this flow?"]
+  }
+];
+
+let current = 0;
+
+function renderDots() {
+  const bar = document.getElementById('progress-bar');
+  bar.innerHTML = '';
+  steps.forEach((s, i) => {
+    const d = document.createElement('div');
+    d.className = 'step-dot' + (i === current ? ' active' : i < current ? ' done' : '');
+    d.textContent = i + 1;
+    d.title = s.title;
+    d.onclick = () => { current = i; render(); };
+    bar.appendChild(d);
+  });
+}
+
+function renderStep() {
+  const s = steps[current];
+  document.getElementById('step-title').textContent = s.title;
+  document.getElementById('step-subtitle').textContent = s.subtitle;
+  document.getElementById('step-desc').textContent = s.desc;
+
+  const tags = document.getElementById('step-tags');
+  tags.innerHTML = s.tags.map(([l, c]) => `<span class="tag tag-${c}">${l}</span>`).join('');
+
+  const vis = document.getElementById('step-visual');
+  vis.innerHTML = s.visual.map(([label, cls]) => {
+    if (label === '→' || label === '→ write' || label === '→ asks') return `<span class="arrow">${label}</span>`;
+    if (label === 'vs') return `<span style="font-size:12px;color:var(--color-text-tertiary);font-weight:500">vs</span>`;
+    return `<span class="node-label ${cls === 'highlight' ? 'highlight' : ''}">${label}</span>`;
+  }).join('');
+
+  const codeWrap = document.getElementById('step-code-wrap');
+  codeWrap.innerHTML = s.code ? `<div class="code-block">${escHtml(s.code)}</div>` : '';
+
+  const insightWrap = document.getElementById('step-insight-wrap');
+  insightWrap.innerHTML = s.insight ? `<div class="insight-box">${s.insight}</div>` : '';
+
+  const askBtns = document.getElementById('ask-btns');
+  askBtns.innerHTML = s.ask.map(q =>
+    `<button class="btn-ask" onclick="sendPrompt('${q.replace(/'/g, "\\'")} (in the context of Kubernetes internals)')">${q} ↗</button>`
+  ).join('');
+
+  document.getElementById('count-badge').textContent = `${current + 1} / ${steps.length}`;
+  document.getElementById('prev-btn').disabled = current === 0;
+  document.getElementById('next-btn').textContent = current === steps.length - 1 ? '✓ Done' : 'Next →';
+  document.getElementById('next-btn').disabled = current === steps.length - 1;
+}
+
+function render() { renderDots(); renderStep(); }
+
+function navigate(dir) {
+  const next = current + dir;
+  if (next >= 0 && next < steps.length) { current = next; render(); }
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+render();
+</script>
