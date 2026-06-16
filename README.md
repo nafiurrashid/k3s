@@ -100,27 +100,7 @@ File:
 
  [1.3 - Services & DNS](./1.3.md)   
 
----
 
-## Upcoming Topics
-
-* Ingress Controllers
-* Traefik
-* NGINX Ingress
-* TLS Certificates
-* ConfigMaps
-* Secrets
-* RBAC
-* Service Accounts
-* Persistent Volumes
-* Storage Classes
-* Prometheus
-* Grafana
-* Loki
-* OpenTelemetry
-* Horizontal Pod Autoscaling
-* High Availability K3s
-* EKS
 
 ---
 
