@@ -62,10 +62,7 @@ Learned:
 * Pod inspection and debugging
 
 File:
-
-```text
-1.1.md
-```
+ [1.1 - Pods](./1.1.md)
 
 ---
 
@@ -83,9 +80,7 @@ Learned:
 
 File:
 
-```text
-1.2.md
-```
+[1.2 - Deployments & ReplicaSets](./1.2.md) 
 
 ---
 
@@ -103,9 +98,7 @@ Learned:
 
 File:
 
-```text
-1.3.md
-```
+ [1.3 - Services & DNS](./1.3.md)   
 
 ---
 
@@ -131,26 +124,6 @@ File:
 
 ---
 
-## Lab Environment
-
-Current environment:
-
-```text
-K3s
- ├─ Single-node cluster
- └─ AWS EC2
-```
-
-Future environment:
-
-```text
-K3s HA Cluster
- ├─ EC2-1
- ├─ EC2-2
- └─ EC2-3
-```
-
----
 
 ## Repository Structure
 
